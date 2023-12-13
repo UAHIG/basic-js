@@ -20,59 +20,58 @@ const { NotImplementedError } = require('../extensions/index.js');
  * 
  */
 
+
 class VigenereCipheringMachine {
   constructor(isDirect = true) {
     this.isDirect = isDirect;
   }
 
   encrypt(message, key) {
-    this.checkArguments(message, key);
+    if (!message || !key) {
+      throw new Error('Message and key are required');
+    }
 
-    const encryptedMessage = this.processMessage(message, key, 'encrypt');
-    return this.isDirect ? encryptedMessage : encryptedMessage.split('').reverse().join('');
+    const result = this.process(message, key, 'encrypt');
+    return this.isDirect ? result.join('') : result.reverse().join('');
   }
 
-  decrypt(encryptedMessage, key) {
-    this.checkArguments(encryptedMessage, key);
+  decrypt(message, key) {
+    if (!message || !key) {
+      throw new Error('Message and key are required');
+    }
 
-    const decryptedMessage = this.processMessage(encryptedMessage, key, 'decrypt');
-    return this.isDirect ? decryptedMessage : decryptedMessage.split('').reverse().join('');
+    const result = this.process(message, key, 'decrypt');
+    return this.isDirect ? result.join('') : result.reverse().join('');
   }
 
-  processMessage(message, key, operation) {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    let result = '';
+  process(message, key, operation) {
+    const messageUpper = message.toUpperCase();
+    const keyUpper = key.toUpperCase();
+    const result = [];
     let keyIndex = 0;
 
     for (let i = 0; i < message.length; i++) {
-      const char = message[i].toUpperCase();
+      const char = messageUpper[i];
 
-      if (alphabet.includes(char)) {
-        const keyChar = key[keyIndex % key.length].toUpperCase();
-        const keyShift = operation === 'encrypt' ? alphabet.indexOf(keyChar) : alphabet.length - alphabet.indexOf(keyChar);
-        const shiftedChar = this.shiftCharacter(char, keyShift, alphabet);
-        result += shiftedChar;
+      if (this.isAlphabetic(char)) {
+        const shift = operation === 'encrypt' ? keyUpper[keyIndex % key.length].charCodeAt(0) - 'A'.charCodeAt(0) : 26 - (keyUpper[keyIndex % key.length].charCodeAt(0) - 'A'.charCodeAt(0));
+        const encryptedChar = String.fromCharCode((char.charCodeAt(0) - 'A'.charCodeAt(0) + shift) % 26 + 'A'.charCodeAt(0));
+        result.push(encryptedChar);
         keyIndex++;
       } else {
-        result += char;
+        result.push(char);
       }
     }
 
     return result;
   }
 
-  shiftCharacter(char, shift, alphabet) {
-    const charIndex = alphabet.indexOf(char);
-    const shiftedIndex = (charIndex + shift) % alphabet.length;
-    return alphabet[shiftedIndex];
-  }
-
-  checkArguments(message, key) {
-    if (!message || !key) {
-      throw new Error('Both message and key are required.');
-    }
+  isAlphabetic(char) {
+    return /^[A-Za-z]$/.test(char);
   }
 }
 
-module.exports = VigenereCipheringMachine;
 
+module.exports = {
+  VigenereCipheringMachine
+};
